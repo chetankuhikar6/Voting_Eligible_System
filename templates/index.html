@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Eligibility Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .citizen-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .eligibility-checks {
+            margin-top: 15px;
+        }
+
+        .check-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .check-item:last-child {
+            border-bottom: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .admin-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .admin-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .admin-link a:hover {
+            text-decoration: underline;
+        }
+
+        .options-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .options-panel h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .option-group label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .option-group select {
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .option-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-secondary:hover, .btn-info:hover {
+            transform: translateY(-2px);
+        }
+
+        .help-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .help-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .help-content h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .help-content ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .help-content li {
+            margin: 5px 0;
+        }
+
+        .close-help {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .dark-theme {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        }
+
+        .dark-theme .container {
+            background: #2c3e50;
+            color: #ecf0f1;
+        }
+
+        .dark-theme .options-panel {
+            background: #34495e;
+            border-color: #4a5f7a;
+        }
+
+        .dark-theme .form-group input,
+        .dark-theme .option-group select {
+            background: #34495e;
+            border-color: #4a5f7a;
+            color: #ecf0f1;
+        }
+
+        .dark-theme .form-group input:focus,
+        .dark-theme .option-group select:focus {
+            border-color: #3498db;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗳️ Voting Eligibility Checker</h1>
+            <p>Verify if a citizen is eligible to vote based on age and address verification</p>
+        </div>
+
+        <!-- User Options Panel -->
+        <div class="options-panel">
+            <h3>⚙️ User Options</h3>
+            <div class="options-grid">
+                <div class="option-group">
+                    <label for="verificationLevel">Verification Level:</label>
+                    <select id="verificationLevel">
+                        <option value="basic">Basic (National ID only)</option>
+                        <option value="standard" selected>Standard (ID + Address)</option>
+                        <option value="strict">Strict (ID + Full Address + Phone)</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="language">Language:</label>
+                    <select id="language">
+                        <option value="en" selected>English</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="ta">தமிழ் (Tamil)</option>
+                        <option value="te">తెలుగు (Telugu)</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="theme">Theme:</label>
+                    <select id="theme">
+                        <option value="light" selected>Light Mode</option>
+                        <option value="dark">Dark Mode</option>
+                        <option value="auto">Auto (System)</option>
+                    </select>
+                </div>
+                
+                <div class="option-group">
+                    <label for="resultFormat">Result Format:</label>
+                    <select id="resultFormat">
+                        <option value="detailed" selected>Detailed Report</option>
+                        <option value="summary">Summary Only</option>
+                        <option value="certificate">Certificate Style</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <form id="eligibilityForm">
+            <div class="form-group">
+                <label for="nationalId">National ID *</label>
+                <input type="text" id="nationalId" name="nationalId" placeholder="Enter National ID (e.g., IND-001)" required>
+            </div>
+
+            <div class="form-row" id="addressFields">
+                <div class="form-group">
+                    <label for="city">City (Optional)</label>
+                    <input type="text" id="city" name="city" placeholder="Enter City">
+                </div>
+                <div class="form-group">
+                    <label for="state">State (Optional)</label>
+                    <input type="text" id="state" name="state" placeholder="Enter State">
+                </div>
+            </div>
+
+            <div class="form-row" id="additionalFields" style="display: none;">
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number (Optional)</label>
+                    <input type="text" id="phoneNumber" name="phoneNumber" placeholder="Enter Phone Number">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email (Optional)</label>
+                    <input type="email" id="email" name="email" placeholder="Enter Email">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn" id="checkBtn">Check Eligibility</button>
+                <button type="button" class="btn btn-secondary" id="clearBtn">Clear Form</button>
+                <button type="button" class="btn btn-info" id="helpBtn">Help</button>
+            </div>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Checking eligibility...</p>
+        </div>
+
+        <div class="result" id="result"></div>
+
+        <div class="admin-link">
+            <a href="/admin">Admin Panel - Manage Citizens</a>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="help-modal" id="helpModal">
+        <div class="help-content">
+            <button class="close-help" onclick="closeHelp()">&times;</button>
+            <h3>Help & Instructions</h3>
+            <div id="helpContent">
+                <h4>How to Use:</h4>
+                <ul>
+                    <li><strong>Basic Mode:</strong> Only National ID required</li>
+                    <li><strong>Standard Mode:</strong> National ID + optional city/state verification</li>
+                    <li><strong>Strict Mode:</strong> National ID + address + phone/email verification</li>
+                </ul>
+                
+                <h4>Sample National IDs:</h4>
+                <ul>
+                    <li>IND-001 (Rajesh, 29) - ✅ Eligible</li>
+                    <li>IND-002 (Priya, 14) - ❌ Not Eligible (Underage)</li>
+                    <li>IND-003 (Amit, 36) - ✅ Eligible</li>
+                </ul>
+                
+                <h4>Features:</h4>
+                <ul>
+                    <li>Multi-language support</li>
+                    <li>Dark/Light theme options</li>
+                    <li>Different result formats</li>
+                    <li>Real-time validation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User options and preferences
+        let userOptions = {
+            verificationLevel: 'standard',
+            language: 'en',
+            theme: 'light',
+            resultFormat: 'detailed'
+        };
+
+        // Initialize user options
+        function initializeOptions() {
+            // Load saved preferences from localStorage
+            const saved = localStorage.getItem('votingAppOptions');
+            if (saved) {
+                userOptions = { ...userOptions, ...JSON.parse(saved) };
+            }
+
+            // Apply saved options
+            document.getElementById('verificationLevel').value = userOptions.verificationLevel;
+            document.getElementById('language').value = userOptions.language;
+            document.getElementById('theme').value = userOptions.theme;
+            document.getElementById('resultFormat').value = userOptions.resultFormat;
+
+            // Apply theme
+            applyTheme(userOptions.theme);
+            
+            // Show/hide fields based on verification level
+            updateFormFields();
+        }
+
+        // Update form fields based on verification level
+        function updateFormFields() {
+            const verificationLevel = document.getElementById('verificationLevel').value;
+            const addressFields = document.getElementById('addressFields');
+            const additionalFields = document.getElementById('additionalFields');
+            
+            if (verificationLevel === 'basic') {
+                addressFields.style.display = 'none';
+                additionalFields.style.display = 'none';
+            } else if (verificationLevel === 'standard') {
+                addressFields.style.display = 'grid';
+                additionalFields.style.display = 'none';
+            } else if (verificationLevel === 'strict') {
+                addressFields.style.display = 'grid';
+                additionalFields.style.display = 'grid';
+            }
+        }
+
+        // Apply theme
+        function applyTheme(theme) {
+            const body = document.body;
+            const container = document.querySelector('.container');
+            
+            if (theme === 'dark') {
+                body.classList.add('dark-theme');
+            } else if (theme === 'light') {
+                body.classList.remove('dark-theme');
+            } else if (theme === 'auto') {
+                // Auto theme based on system preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    body.classList.add('dark-theme');
+                } else {
+                    body.classList.remove('dark-theme');
+                }
+            }
+        }
+
+        // Save options to localStorage
+        function saveOptions() {
+            userOptions.verificationLevel = document.getElementById('verificationLevel').value;
+            userOptions.language = document.getElementById('language').value;
+            userOptions.theme = document.getElementById('theme').value;
+            userOptions.resultFormat = document.getElementById('resultFormat').value;
+            
+            localStorage.setItem('votingAppOptions', JSON.stringify(userOptions));
+        }
+
+        // Event listeners for options
+        document.getElementById('verificationLevel').addEventListener('change', function() {
+            updateFormFields();
+            saveOptions();
+        });
+
+        document.getElementById('theme').addEventListener('change', function() {
+            applyTheme(this.value);
+            saveOptions();
+        });
+
+        document.getElementById('language').addEventListener('change', function() {
+            saveOptions();
+            // Language change would require translation implementation
+            console.log('Language changed to:', this.value);
+        });
+
+        document.getElementById('resultFormat').addEventListener('change', function() {
+            saveOptions();
+        });
+
+        // Clear form
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            document.getElementById('eligibilityForm').reset();
+            document.getElementById('result').style.display = 'none';
+        });
+
+        // Help modal
+        document.getElementById('helpBtn').addEventListener('click', function() {
+            document.getElementById('helpModal').style.display = 'block';
+        });
+
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('helpModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Form submission
+        document.getElementById('eligibilityForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const checkBtn = document.getElementById('checkBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            // Show loading state
+            checkBtn.disabled = true;
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            const formData = {
+                national_id: document.getElementById('nationalId').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                state: document.getElementById('state').value.trim(),
+                phone_number: document.getElementById('phoneNumber').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                verification_level: userOptions.verificationLevel,
+                result_format: userOptions.resultFormat
+            };
+            
+            try {
+                const response = await fetch('/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                // Hide loading
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                
+                if (data.found) {
+                    displayResult(data);
+                } else {
+                    displayError(data.message);
+                }
+                
+            } catch (error) {
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                displayError('Network error. Please try again.');
+            } finally {
+                checkBtn.disabled = false;
+            }
+        });
+        
+        function displayResult(data) {
+            const result = document.getElementById('result');
+            const citizen = data.citizen;
+            const format = userOptions.resultFormat;
+            
+            let html = '';
+            
+            if (format === 'summary') {
+                html = `
+                    <div class="citizen-info">
+                        <h3>${citizen.full_name} (${citizen.national_id})</h3>
+                        <p><strong>Age:</strong> ${data.age} years</p>
+                    </div>
+                `;
+                
+                if (data.is_eligible) {
+                    html += '<h4 style="color: #28a745;">✅ ELIGIBLE TO VOTE</h4>';
+                    result.className = 'result success';
+                } else {
+                    html += '<h4 style="color: #dc3545;">❌ NOT ELIGIBLE TO VOTE</h4>';
+                    result.className = 'result error';
+                }
+            } else if (format === 'certificate') {
+                html = `
+                    <div class="citizen-info" style="text-align: center; border: 3px solid #667eea; padding: 30px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <h2 style="color: #667eea; margin-bottom: 20px;">VOTING ELIGIBILITY CERTIFICATE</h2>
+                        <h3>${citizen.full_name}</h3>
+                        <p><strong>National ID:</strong> ${citizen.national_id}</p>
+                        <p><strong>Date of Birth:</strong> ${citizen.date_of_birth}</p>
+                        <p><strong>Age:</strong> ${data.age} years</p>
+                        <p><strong>Address:</strong> ${citizen.address}, ${citizen.city}, ${citizen.state}, ${citizen.country}</p>
+                        <hr style="margin: 20px 0; border: 1px solid #667eea;">
+                        ${data.is_eligible ? 
+                            '<h3 style="color: #28a745;">✅ ELIGIBLE TO VOTE</h3><p>This citizen meets all voting requirements.</p>' : 
+                            '<h3 style="color: #dc3545;">❌ NOT ELIGIBLE TO VOTE</h3><p>This citizen does not meet voting requirements.</p>'
+                        }
+                        <p style="margin-top: 20px; font-size: 0.9em; color: #666;">Generated on ${new Date().toLocaleDateString()}</p>
+                    </div>
+                `;
+                result.className = 'result info';
+            } else {
+                // Detailed format (default)
+                html = `
+                    <div class="citizen-info">
+                        <h3>${citizen.full_name} (${citizen.national_id})</h3>
+                        <p><strong>Date of Birth:</strong> ${citizen.date_of_birth}</p>
+                        <p><strong>Age:</strong> ${data.age} years</p>
+                        <p><strong>Address:</strong> ${citizen.address}, ${citizen.city}, ${citizen.state}, ${citizen.country}</p>
+                        ${citizen.phone_number ? `<p><strong>Phone:</strong> ${citizen.phone_number}</p>` : ''}
+                        ${citizen.email ? `<p><strong>Email:</strong> ${citizen.email}</p>` : ''}
+                    </div>
+                `;
+                
+                if (data.is_eligible) {
+                    html += '<h4 style="color: #28a745;">✅ ELIGIBLE TO VOTE</h4>';
+                    result.className = 'result success';
+                } else {
+                    html += '<h4 style="color: #dc3545;">❌ NOT ELIGIBLE TO VOTE</h4>';
+                    result.className = 'result error';
+                }
+                
+                html += '<div class="eligibility-checks"><h5>Eligibility Checks:</h5>';
+                data.eligibility_checks.forEach(check => {
+                    html += `<div class="check-item">${check}</div>`;
+                });
+                html += '</div>';
+            }
+            
+            result.innerHTML = html;
+        }
+        
+        function displayError(message) {
+            const result = document.getElementById('result');
+            result.className = 'result error';
+            result.innerHTML = `<h4>Error</h4><p>${message}</p>`;
+        }
+
+        // Initialize options when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeOptions();
+        });
+    </script>
+</body>
+</html>
+
